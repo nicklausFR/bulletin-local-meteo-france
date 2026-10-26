@@ -2675,13 +2675,14 @@ function dailyDataUpdateMarkup(day) {
 
 function threeHourHazardsMarkup(period) {
   const parts = [];
+  const metric = (value, title, icon, extraClass = "") => '<span class="daily-period-gust-volume' + extraClass + '" title="' + escapeText(title) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + periodMetricIcons[icon] + '</svg><strong>' + Math.round(value) + ' km/h</strong></span>';
   if (meanWindIntensityLevel(period.windSpeed) >= 3) {
     const label = ["", "", "", "modéré", "soutenu", "fort"][meanWindIntensityLevel(period.windSpeed)];
-    parts.push("Vent moyen " + label + " · " + Math.round(period.windSpeed) + " km/h");
+    parts.push(metric(period.windSpeed, "Vent moyen " + label, "wind", " piaf-summary-wind"));
   }
-  if (gustIntensityLevel(period.windGust) >= 2) parts.push(shortTermGustLabel(gustIntensityLevel(period.windGust)) + " · " + Math.round(period.windGust) + " km/h");
-  if (period.storm) parts.push("Orage possible");
-  return parts.length ? '<span class="piaf-summary-hazards">' + parts.map(part => '<b>' + escapeText(part) + '</b>').join('<span aria-hidden="true"> · </span>') + '</span>' : "";
+  if (gustIntensityLevel(period.windGust) >= 2) parts.push(metric(period.windGust, shortTermGustLabel(gustIntensityLevel(period.windGust)), "gust"));
+  if (period.storm) parts.push('<span class="piaf-summary-storm" title="Orage possible">' + stormSignalPictogram("Orage possible", "daily-hazard-symbol storm") + '</span>');
+  return parts.length ? '<span class="piaf-summary-hazards">' + parts.join("") + '</span>' : "";
 }
 
 function dailyRowPeriodsMarkup(day, state, sourceRows = []) {
