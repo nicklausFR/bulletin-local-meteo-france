@@ -339,7 +339,7 @@ test('la vignette affiche le ciel de jour avant 13 h et sépare les premières g
   assert.match(conditions[2], /Dès 16 h[\s\S]*?calque-orage\.svg/);
 });
 
-test('avant 4 h le ciel est nocturne, de 4 à 13 h et après 13 h il est diurne', () => {
+test('la nuit couvre aussi le début d’une accalmie avant 8 h', () => {
   const midnight = Date.parse('2026-11-15T00:00:00+01:00');
   const hours = alertHours(24).map((hour, index) => {
     const rain = index <= 4 ? .015 : index <= 13 ? 0 : .02;
@@ -351,8 +351,49 @@ test('avant 4 h le ciel est nocturne, de 4 à 13 h et après 13 h il est diurne'
   const conditions = compactCard(day, input).split('class="condition"').slice(1);
   assert.equal(conditions.length, 3);
   assert.match(conditions[0], /class="period">Nuit[\s\S]*?cloud-night-/);
-  assert.match(conditions[1], /4 h – 13 h[\s\S]*?cloud-day-/);
+  assert.match(conditions[1], /8 h – 13 h[\s\S]*?cloud-day-/);
   assert.match(conditions[2], /Dès 13 h[\s\S]*?cloud-day-/);
+});
+
+test('Demain : l’orage avant 3 h et la pluie jusqu’à 8 h sont résumés dans un seul créneau Nuit', () => {
+  const midnight = Date.parse('2026-11-16T00:00:00+01:00');
+  const hours = alertHours(24).map((hour, index) => {
+    const rain = index > 0 && index <= 8 ? (index <= 3 ? .05 : .29 / 5) : 0;
+    return { ...hour, time: new Date(midnight + index * HOUR).toISOString(), rain, liquidRain: rain,
+      stormSignal: index < 3 };
+  });
+  const input = { dashboard: { arome: { hours } }, now: midnight - HOUR, timezone: 'Europe/Paris',
+    sunTimesForDate: () => ({ sunrise: new Date(midnight + 7.75 * HOUR), sunset: new Date(midnight + 17 * HOUR) }) };
+  const day = dailyRowsTools.buildDailyRows(input).find(day => day.start === midnight);
+  const html = compactCard(day, input);
+  const conditions = html.split('class="condition"').slice(1);
+  assert.deepEqual(conditions.map(condition => condition.match(/class="period">([^<]+)/)?.[1]),
+    ['Nuit', 'Reste de la journée']);
+  assert.match(conditions[0], /cloud-night-[\s\S]*calque-pluie-[\s\S]*calque-orage/);
+  assert.match(conditions[1], /temps sec/);
+  assert.match(html, /class="rain-amount">0,44</);
+});
+
+test('Tendance : la pluie et la neige avant l’aube sont résumées dans un seul créneau Nuit', () => {
+  const midnight = Date.parse('2026-11-28T00:00:00+01:00');
+  const hours = alertHours(24).map((hour, index) => {
+    const liquidRain = index > 0 && index <= 6 ? (index <= 3 ? 2 : 3.8 / 3) : 0;
+    const snowfall = index > 3 && index <= 6 ? 1 / 3 : 0;
+    return { ...hour, time: new Date(midnight + index * HOUR).toISOString(), rain: liquidRain + snowfall, liquidRain, snowfall,
+      weatherCode: snowfall ? 71 : liquidRain ? 61 : 2, cloudCover: index > 6 ? 30 : 100,
+      windGust: index <= 6 ? 63 : 20, stormSignal: false };
+  });
+  const input = { dashboard: { openMeteo: { hours } }, now: midnight - 13 * 24 * HOUR, timezone: 'Europe/Paris', notableGust: 55,
+    sunTimesForDate: () => ({ sunrise: new Date(midnight + 8 * HOUR), sunset: new Date(midnight + 17 * HOUR) }) };
+  const day = dailyRowsTools.buildDailyRows(input).find(day => day.start === midnight);
+  const html = compactCard(day, input);
+  const conditions = html.split('class="condition"').slice(1);
+  assert.match(html, /card-outlook/);
+  assert.deepEqual(conditions.map(condition => condition.match(/class="period">([^<]+)/)?.[1]),
+    ['Nuit', 'En journée']);
+  assert.match(conditions[0], /Pluie et neige, rafales[\s\S]*cloud-night-[\s\S]*calque-pluie[\s\S]*calque-neige/);
+  assert.match(conditions[1], /temps sec[\s\S]*cloud-day-/);
+  assert.match(html, /class="rain-amount">9,8<\/span><span class="rain-unit">mm/);
 });
 
 test('les horaires deviennent des moments de la journée à longue échéance, et une courte pluie avant 1 h ne coupe pas la journée', () => {
@@ -511,12 +552,27 @@ test('un dépassement sur trois heures ajoute un repère à côté du cumul quot
     const [day] = dailyRowsTools.buildDailyRows(input);
     const html = compactCard(day, input);
     assert.match(html, new RegExp(`data-alert="${storm ? 'orange' : 'yellow'}"`));
+    const conditions = html.split('<div class="condition"').slice(1);
+    assert.equal(conditions.length, 2);
+    assert.doesNotMatch(conditions[0], /data-period-alert/);
+    assert.match(conditions[1], new RegExp(`^ data-period-alert="${storm ? 'orange' : 'yellow'}"`));
     assert.match(html, /class="rain-amount">15,11<\/span>/);
     assert.doesNotMatch(html, /class="rain-amount alert-value"/);
     assert.match(html, new RegExp(`class="card-rain-alert" data-level="${storm ? 'orange' : 'yellow'}"`));
     assert.equal((html.match(/<svg class="card-rain-alert-mark"/g) ?? []).length, storm ? 3 : 2);
     assert.doesNotMatch(html, /mm\/3h/);
   }
+});
+
+test('le seuil orange de cumul quotidien garde son repère sans teinter un créneau calme', () => {
+  const midnight = Date.parse('2026-11-15T00:00:00+01:00');
+  const hours = alertHours(24, 2.1).map((hour, index) => ({ ...hour, time: new Date(midnight + index * HOUR).toISOString() }));
+  const input = { dashboard: { arome: { hours } }, week: {}, now: midnight, timezone: 'Europe/Paris' };
+  const [day] = dailyRowsTools.buildDailyRows(input);
+  const html = compactCard(day, input);
+  assert.match(html, /data-daily-rain-alert="orange"/);
+  assert.match(html, /class="card-rain-alert" data-level="orange"/);
+  assert.doesNotMatch(html, /data-period-alert/);
 });
 
 const periodAlert = input => {

@@ -151,3 +151,11 @@
 14/11/2026 21:45 — v1.10 — Terre Rouge : le premier créneau indique jusqu’à quelle heure la pluie est prévue avant un retour durable au sec dans l’après-midi, si la résolution et l’échéance le permettent.
 
 14/11/2026 21:52 — v1.11 — Ajout d’une page « À propos » consacrée à la lecture du bulletin, aux sources météo et à la vigilance officielle. Sur les vignettes larges, le bloc vent complet peut rejoindre les températures et le cumul sur la même ligne.
+
+15/11/2026 08:50 — v1.12 — Terre Rouge : les vignettes résument les épisodes d’une même nuit sous un seul pictogramme « Nuit ».
+
+15/11/2026 22:13 — v1.13 — Terre Rouge : les couleurs d’avertissement sont limitées aux créneaux concernés et le cumul journalier conserve son repère. En cette saison, les épisodes avant 8 h partagent un seul créneau « Nuit ».
+
+15/11/2026 22:19 — v1.14 — Terre Rouge : la pluie et la neige d’un même créneau se superposent sur la frise 24 h, avec leurs échelles respectives. Le survol indique le mélange et détaille les deux quantités.
+
+15/11/2026 22:29 — v1.15 — Terre Rouge : la couleur d’avertissement couvre toute la surface de son créneau sur les vignettes et la frise 3 h. Les gouttes décoratives sont réservées aux barres de pluie seule.
