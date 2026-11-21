@@ -159,3 +159,5 @@
 15/11/2026 22:19 — v1.14 — Terre Rouge : la pluie et la neige d’un même créneau se superposent sur la frise 24 h, avec leurs échelles respectives. Le survol indique le mélange et détaille les deux quantités.
 
 15/11/2026 22:29 — v1.15 — Terre Rouge : la couleur d’avertissement couvre toute la surface de son créneau sur les vignettes et la frise 3 h. Les gouttes décoratives sont réservées aux barres de pluie seule.
+
+21/11/2026 18:39 — v1.20 — Terre Rouge : chaque vignette reste dans sa journée de minuit à minuit ; les prévisions et avertissements de la nuit suivante figurent uniquement dans la vignette du lendemain.

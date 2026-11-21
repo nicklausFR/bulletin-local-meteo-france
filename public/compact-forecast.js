@@ -182,7 +182,7 @@ function condition(period, { rainPictogramLevelForIntervals, mixedPrecipitationM
 }
 
 function card(day, options) {
-  const { now, today, tomorrow, dates, shortDate, localHour, clock, timezone, localDateKey, alertSources, history, forecastSlotAlertTone,
+  const { now, today, tomorrow, dates, localHour, clock, alertSources, history, forecastSlotAlertTone,
     dailyPeriodAlertSummaries, dailyPeriodSummary, dailyRainAlertTone, dailyRainBars } = options;
   const { weekday, day: number, month } = Object.fromEntries(dates.formatToParts(day.start).map(part => [part.type, part.value]));
   const dayLabel = day.date === today ? 'Aujourd’hui' : day.date === tomorrow ? 'Demain' : weekday;
@@ -218,16 +218,9 @@ function card(day, options) {
   const alerts = alertsBetween(alertWindows, day.start, day.end);
   const conditions = selectedConditions.map(({ period, label, night }) => {
     const trends = weatherTrends(periods(period.start, period.end));
-    const nextNight = period.start >= day.end;
-    const name = nextNight ? `Nuit (${shortDate.format(period.start)})` : label;
-    const nextDate = nextNight ? localDateKey(day.end, timezone) : '';
-    const windows = nextNight ? [
-      { start: day.end, end: day.nextNightEnd, date: nextDate },
-      { start: day.nextNightEnd, end: period.end, date: nextDate },
-    ] : alertWindows;
     const localAlerts = period.start === day.start && period.end === day.end ? alerts
-      : alertsBetween(windows, period.start, period.end);
-    return condition(period, options, trends, name, night, forecastSlotAlertTone(localAlerts));
+      : alertsBetween(alertWindows, period.start, period.end);
+    return condition(period, options, trends, label, night, forecastSlotAlertTone(localAlerts));
   }).join('');
   const dailyTone = dailyRainAlertTone(alertSources, day, now);
   const { tone, causes, rainTone } = forecastSlotAlertTone(alerts, dailyTone, true);
@@ -304,9 +297,8 @@ export function compactCardsMarkup(days, options) {
   const today = localDateKey(now, timezone);
   const tomorrow = new Date(Date.parse(today + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
   const dates = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: timezone });
-  const shortDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', timeZone: timezone });
   const localHour = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', hourCycle: 'h23', timeZone: timezone });
   const clock = new Intl.DateTimeFormat('fr-FR', { hour: 'numeric', minute: '2-digit', timeZone: timezone });
   const history = forecastHistory(days, options);
-  return '<ul class="week">' + days.map(day => card(day, { ...options, today, tomorrow, dates, shortDate, localHour, clock, history })).join('') + '</ul>';
+  return '<ul class="week">' + days.map(day => card(day, { ...options, today, tomorrow, dates, localHour, clock, history })).join('') + '</ul>';
 }
