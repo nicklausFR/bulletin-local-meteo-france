@@ -161,3 +161,5 @@
 15/11/2026 22:29 — v1.15 — Terre Rouge : la couleur d’avertissement couvre toute la surface de son créneau sur les vignettes et la frise 3 h. Les gouttes décoratives sont réservées aux barres de pluie seule.
 
 21/11/2026 18:39 — v1.20 — Terre Rouge : chaque vignette reste dans sa journée de minuit à minuit ; les prévisions et avertissements de la nuit suivante figurent uniquement dans la vignette du lendemain.
+
+25/11/2026 16:11 — v1.27 — Le bulletin peut lire les prévisions d’un serveur externe. Le profil configure le sous-titre, la page À propos, l’affichage radar et nowcasting, les tendances et l’adresse d’administration.

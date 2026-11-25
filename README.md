@@ -111,6 +111,25 @@ Construire le site avec `npm run build -- --config=...`, puis servir le contenu 
 L’origine qui fournit ces JSON doit autoriser la lecture depuis le site (CORS).
 Sans `apiBaseUrl`, les JSON sont lus dans le dossier `data/` du site courant.
 
+### Site avec un serveur de données existant
+
+Pour publier uniquement le site, construire avec `node scripts/build.mjs --profile=site.json`,
+puis publier le dossier `dist`. Le profil public peut utiliser `apiMode: "external-json"`
+et indiquer dans `apiBaseUrl` le préfixe HTTPS du serveur qui fournit
+`data/dashboard.json`, `data/week.json` et `data/config.json`. Le serveur autorise
+l’origine du site par CORS. Ce mode ne lance pas de collecte dans GitHub Actions.
+
+Le profil accepte `headerCoordinates` avec `latitude` et `longitude` pour le
+sous-titre, `headerAltitude` en mètres, `publicAbout: false` pour retirer la page
+À propos et ses liens, et `adminUrl` pour diriger les accès d’administration
+vers l’installation existante. Les coordonnées de prévision restent celles de
+`latitude` et `longitude` à la racine du profil.
+
+`features.openMeteo` active les tendances. `features.nowcasting` et
+`features.radar` doivent être actifs ensemble pour afficher le nowcasting et
+sa carte lorsque le serveur fournit les données correspondantes. Les réglages
+d’affichage n’activent aucune acquisition radar ni aucun archivage.
+
 Le choix de l’hébergement ne change donc pas le choix du collecteur. Aucun jeton
 GitHub n’est nécessaire pour exécuter une installation entièrement sur serveur.
 

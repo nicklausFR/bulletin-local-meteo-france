@@ -5,6 +5,7 @@ const runtimeConfig = window.METEO_RUNTIME_CONFIG && typeof window.METEO_RUNTIME
 const apiBaseUrl = new URL(runtimeConfig.apiBase || "./", document.baseURI);
 const siteProfile = { id: "local", place: "", latitude: null, longitude: null, ...runtimeConfig.site };
 const siteFeatures = { nowcasting: true, openMeteo: true, ...siteProfile.features };
+const nowcastEnabled = siteFeatures.nowcasting && siteFeatures.radar !== false;
 const dailyRowsLayout = siteProfile.forecastLayout === "daily-rows";
 const compactForecastLayout = dailyRowsLayout && siteProfile.dailyPresentation === "compact-cards";
 const dailyModuleUrl = name => new URL(name + "?v=" + encodeURIComponent(runtimeConfig.releaseNumber || "1"), document.currentScript?.src || document.baseURI).href;
@@ -27,7 +28,7 @@ const apiUrl = path => {
 };
 let basicForecastTools = null;
 let basicForecast = null;
-const basicForecastReady = siteFeatures.nowcasting ? null : import(new URL("forecast-core.js?v=" + encodeURIComponent(runtimeConfig.releaseNumber || "1"), document.currentScript?.src || document.baseURI).href).then(module => { basicForecastTools = module; });
+const basicForecastReady = nowcastEnabled ? null : import(new URL("forecast-core.js?v=" + encodeURIComponent(runtimeConfig.releaseNumber || "1"), document.currentScript?.src || document.baseURI).href).then(module => { basicForecastTools = module; });
 const appNow = () => Number(window.METEO_REPLAY?.currentTime?.()) || Date.now();
 const replayEngineUrl = new URL("nowcast/engine.js", document.currentScript?.src || document.baseURI);
 const point = { lat: siteProfile.latitude, lon: siteProfile.longitude };
@@ -279,6 +280,7 @@ function refreshSourceIndicators() {
 }
 
 function sourceLink(key, section, label) {
+  if (siteProfile.publicAbout === false) return "";
   const state = sourceSyncState(key);
   const href = (window.METEO_REPLAY?.aboutBase ?? (window.METEO_REPLAY ? "../" : "")) + "about.html#" + section;
   return '<a class="source-link" data-source-status="' + key + '" data-sync="' + state + '" href="' + href + '" title="Voir ' + escapeText(label) + ' dans About · ' + escapeText(sourceSyncTitle(key)) + '">' + label + '</a>';
@@ -288,10 +290,10 @@ const meteoFranceLinks = () => sourceLink("arome", "api-arome", "AROME")
   + sourceLink("piaf", "api-piaf", "PIAF")
   + sourceLink("pearome", "api-pe-arome", "AROME-PI");
 const openMeteoLink = () => sourceLink("openMeteo", "api-open-meteo", "Open-Meteo");
-const radarLink = () => !siteFeatures.nowcasting ? "" : sourceLink("radar", "api-radar", window.METEO_REPLAY ? "Radar archivé" : "Radar v1");
-const lightningLink = () => !siteFeatures.nowcasting ? "" : sourceLink("lightning", "api-eumetsat-li", "EUMETSAT LI");
+const radarLink = () => !nowcastEnabled ? "" : sourceLink("radar", "api-radar", window.METEO_REPLAY ? "Radar archivé" : "Radar v1");
+const lightningLink = () => !nowcastEnabled ? "" : sourceLink("lightning", "api-eumetsat-li", "EUMETSAT LI");
 const vigilanceLink = () => sourceLink("vigilance", "api-vigilance", "Vigilance");
-const nowcastDisplayLink = () => !siteFeatures.nowcasting ? "" : '<a class="source-link source-link-nowcast" href="#nowcast-details" data-open-nowcast-link="true" title="Ouvrir l’affichage nowcasting">Nowcasting</a>';
+const nowcastDisplayLink = () => !nowcastEnabled ? "" : '<a class="source-link source-link-nowcast" href="#nowcast-details" data-open-nowcast-link="true" title="Ouvrir l’affichage nowcasting">Nowcasting</a>';
 const shortRainLinks = () => window.METEO_REPLAY
   ? (window.METEO_REPLAY.archiveTesting ? radarLink() : openMeteoLink()) + nowcastDisplayLink()
   : sourceLink("piaf", "api-piaf", "Météo-France") + nowcastDisplayLink();
@@ -3753,7 +3755,7 @@ function piafHourlyRain(piaf, radar = null) {
 }
 
 function currentNowcast() {
-  if (!siteFeatures.nowcasting) {
+  if (!nowcastEnabled) {
     if (basicForecastTools && latestForecastData && (!basicForecast || appNow() >= basicForecast.validUntil)) basicForecast = basicForecastTools.prepareBasicForecast(latestForecastData, appNow());
     return basicForecast;
   }
@@ -5318,7 +5320,7 @@ function renderThreeHourSummary(forecast) {
 
   const generalExpertise = '<section class="storm-summary storm-general"><div class="three-hour-actions">'
     + summaryAction('rain', rainMessageSequence.length ? rainMessageSequence : rainValue, rainColorLevel, rainDetail, rainMessageSequence.length ? rainTrend : null, 'rain')
-    + summaryAction('storm', '', stormCombinedLevel, stormDetail, stormTrend, siteFeatures.nowcasting ? 'nowcast' : null, stormCombinedLevel, { passage: stormDetail, trend: stormTrendDetail, eta: stormEtaLabel, duration: stormDurationLabel, etaDetail: stormEtaDetail })
+    + summaryAction('storm', '', stormCombinedLevel, stormDetail, stormTrend, nowcastEnabled ? 'nowcast' : null, stormCombinedLevel, { passage: stormDetail, trend: stormTrendDetail, eta: stormEtaLabel, duration: stormDurationLabel, etaDetail: stormEtaDetail })
     + summaryAction('wind', windValue, windLevel, windDetail, windTrendWithDetail, 'wind48', null, null, windColorLevel, true)
     + '</div></section>';
   if (summaryElement) {
@@ -5357,7 +5359,7 @@ function renderThreeHourSummary(forecast) {
 }
 
 function renderRadarNowcast(radar, piaf, arome, lightning, vigilance = null) {
-  if (!siteFeatures.nowcasting) {
+  if (!nowcastEnabled) {
     const forecast = currentNowcast();
     if (forecast) renderThreeHourSummary(forecast);
     return;
@@ -5703,7 +5705,7 @@ async function renderAppVersion() {
 }
 
 function setNowcastOpen(open, scroll = false) {
-  if (!siteFeatures.nowcasting) return;
+  if (!nowcastEnabled) return;
   const link = $("header-nowcast-link");
   const details = $("nowcast-details");
   const titleToggle = $("nowcast-title-toggle");
@@ -5757,7 +5759,7 @@ function registerServiceWorker() {
 bindForecastLayout();
 bindHeaderNowcastLink();
 registerServiceWorker();
-if (window.location.hash === "#radar-nowcast") {
+if (nowcastEnabled && window.location.hash === "#radar-nowcast") {
   const nowcastDetails = $("nowcast-details");
   if (nowcastDetails) {
     nowcastDetails.hidden = false;

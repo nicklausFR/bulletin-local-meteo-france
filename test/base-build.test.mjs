@@ -58,6 +58,44 @@ test('un état provenant d’un autre lieu est refusé avant de remplacer la con
   assert.throws(() => build('--state=' + state), /Les données ne correspondent pas/);
 });
 
+test('un site alimenté par un serveur externe se construit depuis un profil public sans collecte', async () => {
+  const { prepareInheritedSite } = await import('../scripts/prepare-inherited-site.mjs');
+  const workspace = path.join(root, '.cache', 'external-json-build');
+  await mkdir(workspace, { recursive: true });
+  const profile = {
+    name: 'Météo locale', latitude: 44, longitude: 5, headerCoordinates: { latitude: 44.25, longitude: 5.5 },
+    headerAltitude: 1164.33, publicAbout: false, apiMode: 'external-json', features: { nowcasting: false, radar: false },
+    apiBaseUrl: 'https://data.example/bulletin/', adminUrl: 'https://data.example/admin/'
+  };
+  await writeFile(path.join(workspace, 'site.json'), JSON.stringify(profile));
+  const { siteDirectory, warnings, errors } = await prepareInheritedSite({ workspace, profilePath: 'site.json', collect: true,
+    fetchImpl: async () => assert.fail('Le serveur doit être consulté par le navigateur.') });
+  assert.deepEqual(warnings, []);
+  assert.deepEqual(errors, []);
+  const read = file => readFile(path.join(siteDirectory, file), 'utf8');
+  const html = await read('index.html');
+  assert.match(html, /44,25° N · 5,5° E · 1\u202f164 m/);
+  assert.doesNotMatch(html, /about\.html|about\.css|__ABOUT_/);
+  for (const file of ['about.html', 'about.css']) {
+    await assert.rejects(access(path.join(siteDirectory, file)), { code: 'ENOENT' });
+  }
+  assert.match(await read('service-worker.js'), /const about = 'false'/);
+  for (const file of ['admin.html', 'admin/index.html']) {
+    assert.match(await read(file), /url=https:\/\/data\.example\/admin\//);
+  }
+  const context = { window: {} };
+  runInNewContext(await read('runtime-config.js'), context);
+  const runtime = context.window.METEO_RUNTIME_CONFIG;
+  assert.equal(runtime.dataMode, 'static');
+  assert.equal(runtime.apiBase, profile.apiBaseUrl);
+  assert.equal(runtime.site.latitude, 44);
+  assert.equal(runtime.site.features.nowcasting, false);
+  assert.equal(runtime.site.features.radar, false);
+  for (const module of ['app.js', 'daily-rows.js', 'card-periods.js', 'compact-forecast.js', 'forecast-core.js']) {
+    assert.equal(await read(module), await readFile(path.join(root, 'public', module), 'utf8'));
+  }
+});
+
 test('une collecte sans coordonnées est refusée avant tout accès réseau', async () => {
   const { collectWeather } = await import('../scripts/collect-weather.mjs');
   const { siteProfile } = await import('../sites/profiles.mjs');

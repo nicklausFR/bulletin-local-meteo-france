@@ -16,13 +16,19 @@ test('le profil externe conserve les paramètres du lieu et les fonctions du soc
   assert.equal(profile.publicUrl, 'https://weather.example/bulletin/');
   assert.equal(profile.forecastDays, 16);
   assert.equal(profile.features.nowcasting, false);
+  assert.equal(profile.features.openMeteo, true);
+  const options = normalizeSiteProfile({ ...input(), features: { nowcasting: true, radar: true, openMeteo: false } });
+  assert.equal(options.features.nowcasting, true);
+  assert.equal(options.features.radar, true);
+  assert.equal(options.features.openMeteo, false);
+  assert.equal(options.features.piaf, true);
 });
 
 test('le profil refuse coordonnées, fuseau, secrets et modules non pris en charge', () => {
   for (const changes of [
     { latitude: null }, { latitude: 91 }, { longitude: -181 },
     { timezone: 'invalide' }, { headerAltitude: '100' }, { id: '../autre' },
-    { token: 'inattendu' }, { features: { radar: true } },
+    { token: 'inattendu' }, { features: { pam: true } }, { features: { radar: 'false' } },
     { publicUrl: 'http://weather.example/' }, { publicUrl: 'https://user:secret@weather.example/' }
   ]) assert.throws(() => normalizeSiteProfile({ ...input(), ...changes }));
 });

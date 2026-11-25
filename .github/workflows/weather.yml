@@ -39,7 +39,7 @@ jobs:
         run: node scripts/private-config.mjs
       - name: Choisir la collecte
         id: collect
-        if: github.event_name != 'schedule' || steps.config.outputs.api-mode != 'server'
+        if: github.event_name != 'schedule' || steps.config.outputs.api-mode == 'github-actions'
         env:
           REQUESTED_GROUP: ${{ inputs.group }}
           SCHEDULE: ${{ github.event.schedule }}
@@ -62,7 +62,7 @@ jobs:
         with:
           profile: ${{ steps.config.outputs.profile }}
           state: .cache/weather/site.json
-          collect: ${{ steps.config.outputs.api-mode != 'server' && steps.collect.outputs.group != 'cached' }}
+          collect: ${{ steps.config.outputs.api-mode == 'github-actions' && steps.collect.outputs.group != 'cached' }}
           group: ${{ steps.collect.outputs.group == 'cached' && 'all' || steps.collect.outputs.group }}
       - name: Conserver les acquisitions disponibles
         if: always() && steps.collect.outcome == 'success' && hashFiles('.cache/weather/site.json') != ''

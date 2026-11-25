@@ -13,9 +13,10 @@ export function parsePrivateConfig(text) {
     throw new Error('Configuration privée invalide : site, githubToken et meteoFranceToken attendus.');
   }
   const normalized = normalizeSiteProfile(value.site);
-  const keys = ['name', 'latitude', 'longitude', 'department', 'headerAltitude', 'timezone', 'publicUrl', 'githubRepository', 'githubBranch', 'apiMode', 'apiBaseUrl'];
+  const keys = ['name', 'latitude', 'longitude', 'department', 'headerAltitude', 'headerCoordinates', 'publicAbout', 'adminUrl', 'features', 'timezone', 'publicUrl', 'githubRepository', 'githubBranch', 'apiMode', 'apiBaseUrl'];
   for (const key of Object.keys(value.site)) if (!keys.includes(key)) throw new Error('Paramètre de configuration inconnu : ' + key);
   const site = Object.fromEntries(Object.keys(value.site).map(key => [key, normalized[key]]));
+  if (value.site.features !== undefined) site.features = value.site.features;
   if (normalized.apiMode === 'github-actions' && !site.githubRepository) throw new Error('site.githubRepository est requis pour GitHub Actions.');
   if (value.githubToken === undefined) value.githubToken = '';
   for (const key of ['githubToken', 'meteoFranceToken']) {

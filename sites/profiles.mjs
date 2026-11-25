@@ -5,6 +5,7 @@ const base = {
   id: 'local', name: 'Bulletin météo local', place: '',
   latitude: null, longitude: null, department: null, timezone: 'Europe/Paris',
   forecastLayout: 'daily-rows', forecastDays: 16, dailyPresentation: 'compact-cards',
+  publicAbout: true,
   headerAltitude: null,
   apiMode: 'github-actions',
   features: {
@@ -22,10 +23,18 @@ export function siteProfile(id = base.id) {
 export function normalizeSiteProfile(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Profil de lieu invalide.');
   const profile = siteProfile();
-  const keys = ['id', 'name', 'place', 'latitude', 'longitude', 'department', 'timezone', 'headerAltitude', 'publicUrl', 'githubRepository', 'githubBranch', 'meteoTokenSecret', 'apiMode', 'apiBaseUrl'];
-  for (const key of Object.keys(value)) {
+  const { features, ...settings } = value;
+  const keys = ['id', 'name', 'place', 'latitude', 'longitude', 'department', 'timezone', 'headerAltitude', 'headerCoordinates', 'publicAbout', 'adminUrl', 'publicUrl', 'githubRepository', 'githubBranch', 'meteoTokenSecret', 'apiMode', 'apiBaseUrl'];
+  for (const key of Object.keys(settings)) {
     if (!keys.includes(key)) throw new Error('Paramètre de lieu inconnu : ' + key);
-    profile[key] = value[key];
+    profile[key] = settings[key];
+  }
+  if (features !== undefined) {
+    if (!features || typeof features !== 'object' || Array.isArray(features)
+        || Object.entries(features).some(([key, enabled]) => !['nowcasting', 'radar', 'openMeteo'].includes(key) || typeof enabled !== 'boolean')) {
+      throw new Error('Options météo invalides.');
+    }
+    Object.assign(profile.features, features);
   }
   if (value.place === undefined) profile.place = profile.name;
   if (value.id === undefined) profile.id = 'site-' + createHash('sha256').update(JSON.stringify([profile.latitude, profile.longitude])).digest('hex').slice(0, 16);
@@ -36,13 +45,21 @@ export function normalizeSiteProfile(value) {
   if (!Number.isFinite(profile.latitude) || Math.abs(profile.latitude) > 90 ||
       !Number.isFinite(profile.longitude) || Math.abs(profile.longitude) > 180) throw new Error('Coordonnées de lieu invalides.');
   if (profile.headerAltitude !== null && (!Number.isFinite(profile.headerAltitude) || profile.headerAltitude < -500 || profile.headerAltitude > 9000)) throw new Error('Altitude invalide.');
+  if (profile.headerCoordinates !== undefined) {
+    const { latitude, longitude } = profile.headerCoordinates || {};
+    if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 || !Number.isFinite(longitude) || Math.abs(longitude) > 180) {
+      throw new Error('Coordonnées d’en-tête invalides.');
+    }
+    profile.headerCoordinates = { latitude, longitude };
+  }
+  if (typeof profile.publicAbout !== 'boolean') throw new Error('Visibilité de la page À propos invalide.');
   if (profile.department !== null && (typeof profile.department !== 'string' || !/^(?:[0-9]{2,3}|2[AB])$/.test(profile.department))) throw new Error('Département invalide.');
   try { new Intl.DateTimeFormat('fr-FR', { timeZone: profile.timezone }); } catch { throw new Error('Fuseau horaire invalide.'); }
   if (profile.githubRepository !== undefined && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(profile.githubRepository)) throw new Error('Dépôt GitHub invalide.');
   if (profile.githubBranch !== undefined && !/^[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(profile.githubBranch)) throw new Error('Branche GitHub invalide.');
   if (profile.meteoTokenSecret !== undefined && !/^[A-Z_][A-Z0-9_]*$/.test(profile.meteoTokenSecret)) throw new Error('Nom du secret météo invalide.');
-  if (!['github-actions', 'server'].includes(profile.apiMode)) throw new Error('Mode de collecte API invalide.');
-  if (profile.apiMode === 'server' && !profile.apiBaseUrl) throw new Error('Adresse du serveur API requise.');
+  if (!['github-actions', 'server', 'external-json'].includes(profile.apiMode)) throw new Error('Mode de collecte API invalide.');
+  if (profile.apiMode !== 'github-actions' && !profile.apiBaseUrl) throw new Error('Adresse du serveur API requise.');
   if (profile.apiBaseUrl !== undefined) {
     let url;
     try { url = new URL(profile.apiBaseUrl); } catch { throw new Error('Adresse du serveur API invalide.'); }
@@ -53,6 +70,12 @@ export function normalizeSiteProfile(value) {
     const url = new URL(profile.publicUrl);
     if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error('Adresse publique HTTPS invalide.');
     profile.publicUrl = url.href.endsWith('/') ? url.href : url.href + '/';
+  }
+  if (profile.adminUrl !== undefined) {
+    let url;
+    try { url = new URL(profile.adminUrl); } catch { throw new Error('Adresse d’administration invalide.'); }
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error('Adresse d’administration HTTPS invalide.');
+    profile.adminUrl = url.href;
   }
   return profile;
 }
