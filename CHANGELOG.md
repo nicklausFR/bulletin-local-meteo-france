@@ -165,3 +165,5 @@
 25/11/2026 16:11 — v1.27 — Le bulletin peut lire les prévisions d’un serveur externe. Le profil configure le sous-titre, la page À propos, l’affichage radar et nowcasting, les tendances et l’adresse d’administration.
 
 25/11/2026 19:57 — v1.28 — Dans les vignettes, les rafales se placent au centre du nuage, l’éclair sur son bord supérieur droit et la voiture sous les gouttes de pluie verglaçante avec un espacement régulier.
+
+25/11/2026 20:48 — v1.29 — Les frises 3 h et 24 h utilisent une échelle neige d’au moins 0 à 5 cm/h et affinent les congères pour représenter les faibles chutes à leur juste hauteur.
