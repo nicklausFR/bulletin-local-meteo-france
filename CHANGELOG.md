@@ -163,3 +163,5 @@
 21/11/2026 18:39 — v1.20 — Terre Rouge : chaque vignette reste dans sa journée de minuit à minuit ; les prévisions et avertissements de la nuit suivante figurent uniquement dans la vignette du lendemain.
 
 25/11/2026 16:11 — v1.27 — Le bulletin peut lire les prévisions d’un serveur externe. Le profil configure le sous-titre, la page À propos, l’affichage radar et nowcasting, les tendances et l’adresse d’administration.
+
+25/11/2026 19:57 — v1.28 — Dans les vignettes, les rafales se placent au centre du nuage, l’éclair sur son bord supérieur droit et la voiture sous les gouttes de pluie verglaçante avec un espacement régulier.

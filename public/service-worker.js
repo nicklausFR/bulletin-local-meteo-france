@@ -1,7 +1,7 @@
 const prefix = "meteo-local-";
 const cacheName = prefix + "__RELEASE__";
 const about = '__ABOUT_ENABLED__' !== 'false';
-const shell = ["./","index.html","about.html","about.css?v=__ASSET_VERSION__","runtime-config.js?v=__RELEASE__","app.js?v=__ASSET_VERSION__","style.css?v=__ASSET_VERSION__","compact-forecast.css?v=__ASSET_VERSION__","forecast-core.js?v=__RELEASE__","daily-rows.js?v=__RELEASE__","compact-forecast.js?v=__RELEASE__","card-periods.js","precipitation-24h.js","pictogrammes/calque-traces-pluie.svg","nowcast/engine.js","nowcast/map.js","manifest.webmanifest"].map(p => new URL(p, self.registration.scope));
+const shell = ["./","index.html","about.html","about.css?v=__ASSET_VERSION__","runtime-config.js?v=__RELEASE__","app.js?v=__ASSET_VERSION__","style.css?v=__ASSET_VERSION__","compact-forecast.css?v=__ASSET_VERSION__","forecast-core.js?v=__RELEASE__","daily-rows.js?v=__RELEASE__","compact-forecast.js?v=__RELEASE__","forecast-pictogram.js","card-periods.js","precipitation-24h.js","pictogrammes/calque-traces-pluie.svg","nowcast/engine.js","nowcast/map.js","manifest.webmanifest"].map(p => new URL(p, self.registration.scope));
 self.addEventListener('install', event => event.waitUntil(caches.open(cacheName).then(cache => cache.addAll(shell
   .filter(url => about || !/\/about\.(?:html|css)$/.test(url.pathname))
   .map(url => new Request(url, { cache: 'reload' })))).then(() => self.skipWaiting())));
