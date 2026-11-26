@@ -169,6 +169,19 @@ test('chaque pictogramme utilise l’intensité de son propre créneau, y compri
   assert.match(html, /class="period">Matin<[\s\S]*?calque-pluie-1\.svg[\s\S]*?class="period">Reste de la journée<[\s\S]*?calque-pluie-2\.svg/);
 });
 
+test('le dessin d’un ciel dégagé est centré verticalement dans la vignette', () => {
+  const midnight = Date.parse('2026-11-26T00:00:00+01:00');
+  const hours = alertHours(24, 0, { weatherCode: 0, cloudCover: 0 })
+    .map((hour, index) => ({ ...hour, time: new Date(midnight + index * HOUR).toISOString() }));
+  const input = { dashboard: { arome: { hours } }, week: {}, now: midnight, timezone: 'Europe/Paris' };
+  const [day] = dailyRowsTools.buildDailyRows(input);
+  const html = compactCard(day, input);
+  const viewBox = html.match(/<svg class="weather-pictogram" viewBox="0 (-?[\d.]+) 128 136"[^>]*><image href="vendor\/weather-variants\/cloud-day-0\.svg"/);
+  assert.ok(viewBox);
+  // The visible sun is centered at y = 48 after placing its layer.
+  assert.equal(Number(viewBox[1]) + 136 / 2, 48);
+});
+
 test('le pictogramme de pluie verglaçante sépare ses calques et conserve les signaux météo', () => {
   const midnight = Date.parse('2026-11-21T00:00:00+01:00');
   const hours = alertHours(24, 1, { weatherCode: 66, windGust: 60, stormSignal: true })
@@ -177,7 +190,7 @@ test('le pictogramme de pluie verglaçante sépare ses calques et conserve les s
   const day = dailyRowsTools.buildDailyRows(input).find(day => day.start === midnight);
   const html = compactCard(day, input);
   assert.match(html, /aria-label="[^"]*Orage possible, Pluie verglaçante, rafales"/);
-  const pictogram = html.match(/<svg class="weather-pictogram" viewBox="0 0 128 136"[^>]*>(.*?)<\/svg>/)[1];
+  const pictogram = html.match(/<svg class="weather-pictogram" viewBox="0 -?[\d.]+ 128 136"[^>]*>(.*?)<\/svg>/)[1];
   assert.deepEqual([...pictogram.matchAll(/href="pictogrammes\/([^"]+\.svg)"/g)].map(match => match[1]), [
     'calque-nuage-verglas.svg', 'calque-gouttes-verglas.svg', 'calque-route-glissante.svg',
     'calque-orage.svg', 'calque-vent.svg'
