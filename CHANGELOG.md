@@ -171,3 +171,5 @@
 26/11/2026 09:06 — v1.30 — Centrage vertical des pictogrammes dans les vignettes selon les phénomènes affichés.
 
 26/11/2026 09:26 — v1.31 — Les Tatins : le titre du bulletin devient « Météo Boulc> Les Tatins ».
+
+26/11/2026 14:18 — v1.32 — Les congères gardent une taille fixe et visible dans les frises 3 h et 24 h, même avec très peu de neige.
